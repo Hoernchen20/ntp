@@ -11,7 +11,6 @@
 package ntp
 
 import (
-	"crypto/rand"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -390,20 +389,10 @@ func getTime(host string, opt QueryOptions) (*msg, ntpTime, error) {
 	xmitMsg.setVersion(opt.Version)
 	xmitMsg.setLeap(LeapNotInSync)
 
-	// To ensure privacy and prevent spoofing, try to use a random 64-bit
-	// value for the TransmitTime. If crypto/rand couldn't generate a
-	// random value, fall back to using the system clock. Keep track of
-	// when the messsage was actually transmitted.
-	bits := make([]byte, 8)
-	_, err = rand.Read(bits)
-	var xmitTime time.Time
-	if err == nil {
-		xmitMsg.TransmitTime = ntpTime(binary.BigEndian.Uint64(bits))
-		xmitTime = time.Now()
-	} else {
-		xmitTime = time.Now()
-		xmitMsg.TransmitTime = toNtpTime(xmitTime)
-	}
+	// Set transmit time
+
+	var xmitTime = time.Now()
+	xmitMsg.TransmitTime = toNtpTime(xmitTime)
 
 	// Transmit the query.
 	err = binary.Write(con, binary.BigEndian, xmitMsg)
